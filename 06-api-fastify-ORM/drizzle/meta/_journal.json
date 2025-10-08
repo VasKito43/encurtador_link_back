@@ -22,6 +22,13 @@
       "when": 1758724747370,
       "tag": "0002_nappy_blizzard",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1759926724609,
+      "tag": "0003_slim_fallen_one",
+      "breakpoints": true
     }
   ]
 }

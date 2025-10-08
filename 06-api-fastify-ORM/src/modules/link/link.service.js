@@ -77,4 +77,11 @@ export class LinkService {
     }
     return this.linkRepository.delete(id);
   }
+
+  async incrementAndGetUrlByCode(codigo) {
+    const row = await this.linkRepository.incrementClicksAndGetByCode(codigo);
+    if (!row) return null;
+    // dependendo do formato retornado, row.url deve existir
+    return { url: row.url, id: row.id, clicks: row.clicks };
+  }
 }

@@ -1,6 +1,8 @@
 // src/modules/link/link.repository.js
 import { randomUUID } from 'node:crypto';
-import db from '../../infra/database.js';
+import { db } from '../../infra/database.js';
+import { links } from '../../infra/db/schema.js';
+import { eq, sql } from 'drizzle-orm';
 
 export class LinkRepository {
   constructor() {
@@ -8,45 +10,60 @@ export class LinkRepository {
   }
 
   async findAll() {
-    const result = await this.db.query('SELECT * FROM links ORDER BY id ASC');
-    return result.rows;
+    return await this.db.select().from(links);
   }
 
   async findByUrl(url) {
-    const result = await this.db.query('SELECT * FROM links WHERE url = $1', [url]);
-    return result.rows[0] || null;
+    const rows = await this.db.select().from(links).where(eq(links.url, url));
+    return rows[0] || null;
   }
 
   async findByCode(codigo) {
-    const result = await this.db.query('SELECT * FROM links WHERE codigo = $1', [codigo]);
-    return result.rows[0] || null;
+    const rows = await this.db.select().from(links).where(eq(links.codigo, codigo));
+    return rows[0] || null;
   }
 
   async findById(id) {
-    const result = await this.db.query('SELECT * FROM links WHERE id = $1', [id]);
-    return result.rows[0] || null;
+    const rows = await this.db.select().from(links).where(eq(links.id, id));
+    return rows[0] || null;
   }
 
   async create(linkData) {
-    const { url, legenda, codigo } = linkData;
     const id = randomUUID();
-    const sql = 'INSERT INTO links (id, url, legenda, codigo) VALUES ($1, $2, $3, $4) RETURNING *';
-    const values = [id, url, legenda, codigo];
-    const result = await this.db.query(sql, values);
-    return result.rows[0];
+    const values = { id, url: linkData.url, legenda: linkData.legenda ?? null, codigo: linkData.codigo };
+    const inserted = await this.db.insert(links).values(values).returning();
+    // returning() geralmente retorna um array com a linha inserida
+    return Array.isArray(inserted) ? inserted[0] : inserted;
   }
 
   async update(id, linkData) {
-    const { url, legenda } = linkData;
-    // CORREÇÃO: usar $3 para o id (antes estava $4)
-    const sql = 'UPDATE links SET url = $1, legenda = $2 WHERE id = $3 RETURNING *';
-    const values = [url, legenda, id];
-    const result = await this.db.query(sql, values);
-    return result.rows[0] || null;
+    const updated = await this.db
+      .update(links)
+      .set({ url: linkData.url, legenda: linkData.legenda ?? null })
+      .where(eq(links.id, id))
+      .returning();
+    return updated?.[0] || null;
   }
 
   async delete(id) {
-    const result = await this.db.query('DELETE FROM links WHERE id = $1', [id]);
-    return result.rowCount > 0;
+    const res = await this.db.delete(links).where(eq(links.id, id));
+    // delete retorna info; aqui consideramos sucesso quando foi afetada 1+ linhas
+    // Drizzle pode retornar a contagem em result.rowCount em alguns drivers; ou vazio.
+    // Para simples controle, retorne true se findById não mais existir:
+    const still = await this.findById(id);
+    return still === null;
   }
+
+  async incrementClicksAndGetByCode(codigo) {
+  // Atualiza clicks de forma atômica e retorna a linha atualizada
+  const updated = await this.db
+    .update(links)
+    .set({ clicks: sql`${links.clicks} + 1` })
+    .where(eq(links.codigo, codigo))
+    .returning();
+
+  // returning() geralmente retorna um array com a linha atualizada
+  return Array.isArray(updated) ? updated[0] || null : (updated || null);
+}
+
 }

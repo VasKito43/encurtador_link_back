@@ -92,4 +92,21 @@ export class LinkController {
     }
 
   }
+
+  async redirect(request, reply) {
+    try {
+      const { code } = request.params; // atenção: parâmetro chamado "code"
+      const result = await this.linkService.incrementAndGetUrlByCode(code);
+
+      if (!result) {
+        return reply.status(404).send({ message: 'Link não encontrado.' });
+      }
+
+      // Redireciona com 302 (Found)
+      return reply.redirect(302, result.url);
+    } catch (error) {
+      console.error('Erro ao redirecionar:', error);
+      return reply.status(500).send({ message: 'Erro interno no servidor.' });
+    }
+  }
 }
