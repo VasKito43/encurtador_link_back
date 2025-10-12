@@ -81,7 +81,7 @@ export class LinkController {
 
       // Status 204 (No Content) é a resposta padrão para uma exclusão bem-sucedida.
       return reply.status(204).send();
-      
+
     } catch (error) {
       if (error.message === 'Link não encontrado.') {
         return reply.status(404).send({ message: error.message });
@@ -93,20 +93,41 @@ export class LinkController {
 
   }
 
-  async redirect(request, reply) {
-    try {
-      const { code } = request.params; // atenção: parâmetro chamado "code"
-      const result = await this.linkService.incrementAndGetUrlByCode(code);
+  // src/modules/link/link.controller.js
+// src/modules/link/link.controller.js
+async redirect(request, reply) {
+  try {
+    const { code } = request.params;
 
-      if (!result) {
-        return reply.status(404).send({ message: 'Link não encontrado.' });
-      }
-
-      // Redireciona com 302 (Found)
-      return reply.redirect(302, result.url);
-    } catch (error) {
-      console.error('Erro ao redirecionar:', error);
-      return reply.status(500).send({ message: 'Erro interno no servidor.' });
+    // valida formato do code para evitar favicon.ico etc
+    if (!code || !/^[A-Za-z0-9_-]+$/.test(code)) {
+      return reply.status(404).send({ message: 'Link não encontrado.' });
     }
+
+    const result = await this.linkService.incrementAndGetUrlByCode(code);
+
+    if (!result || !result.url) {
+      return reply.status(404).send({ message: 'Link não encontrado.' });
+    }
+
+    const destination = result.url;
+
+    // valida a URL (lança se inválida)
+    try {
+      new URL(destination);
+    } catch (err) {
+      console.error('URL inválida no DB:', destination);
+      return reply.status(500).send({ message: 'URL de destino inválida.' });
+    }
+
+
+    reply.header('location', destination).status(302).send();
+  } catch (error) {
+    console.error('Erro ao redirecionar:', error);
+    return reply.status(500).send({ message: 'Erro interno no servidor.' });
   }
+}
+
+
+
 }
