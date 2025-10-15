@@ -1,4 +1,3 @@
-// src/modules/link/link.repository.js
 import { randomUUID } from 'node:crypto';
 import { db } from '../../infra/database.js';
 import { links } from '../../infra/db/schema.js';
@@ -32,7 +31,6 @@ export class LinkRepository {
     const id = randomUUID();
     const values = { id, url: linkData.url, legenda: linkData.legenda ?? null, codigo: linkData.codigo };
     const inserted = await this.db.insert(links).values(values).returning();
-    // returning() geralmente retorna um array com a linha inserida
     return Array.isArray(inserted) ? inserted[0] : inserted;
   }
 
@@ -47,22 +45,17 @@ export class LinkRepository {
 
   async delete(id) {
     const res = await this.db.delete(links).where(eq(links.id, id));
-    // delete retorna info; aqui consideramos sucesso quando foi afetada 1+ linhas
-    // Drizzle pode retornar a contagem em result.rowCount em alguns drivers; ou vazio.
-    // Para simples controle, retorne true se findById não mais existir:
     const still = await this.findById(id);
     return still === null;
   }
 
   async incrementClicksAndGetByCode(codigo) {
-  // Atualiza clicks de forma atômica e retorna a linha atualizada
   const updated = await this.db
     .update(links)
     .set({ clicks: sql`${links.clicks} + 1` })
     .where(eq(links.codigo, codigo))
     .returning();
 
-  // returning() geralmente retorna um array com a linha atualizada
   return Array.isArray(updated) ? updated[0] || null : (updated || null);
 }
 

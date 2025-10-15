@@ -1,4 +1,3 @@
-// src/infra/db/schema.js
 import { pgTable, uuid, text, integer, timestamp } from 'drizzle-orm/pg-core';
 
 export const links = pgTable('links', {
