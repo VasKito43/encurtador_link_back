@@ -1,6 +1,3 @@
-// Importamos o Model para que o Controller possa interagir com ele.
-import { LinkService } from './link.service.js';
-
 export class LinkController {
 
   // Agora o Controller RECEBE o serviço.
@@ -61,7 +58,7 @@ export class LinkController {
 
       return reply.status(200).send(updatedLink);
     } catch (error) {
-      if (error.message === 'Link    não encontrado.') {
+      if (error.message === 'Link não encontrado.') {
         return reply.status(404).send({ message: error.message });
       }
       if (error.message.includes('url já cadastrada')) {
