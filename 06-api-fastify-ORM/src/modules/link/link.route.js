@@ -5,7 +5,6 @@ import { LinkRepository } from './link.repository.js';
 import { LinkService } from './link.service.js';
 import { LinkController } from './link.controller.js';
 
-
 // 2. A "linha de montagem" para o módulo de links acontece aqui.
 const linkRepository = new LinkRepository();
 const linkService = new LinkService(linkRepository);
